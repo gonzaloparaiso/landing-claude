@@ -540,7 +540,9 @@ src="https://www.facebook.com/tr?id=1362904155651339&ev=PageView&noscript=1"
   }
   .form-group input::placeholder{color:var(--ink-muted)}
   .form-group input:focus{border-color:var(--teal);box-shadow:0 0 0 4px rgba(15,152,138,.1)}
-  .form-group input.error{border-color:var(--error)}
+  .form-group input.error{border-color:var(--error);box-shadow:0 0 0 4px rgba(229,72,77,.1)}
+  .field-error{display:none;font-size:12px;font-weight:600;color:var(--error);margin-top:2px}
+  .field-error.show{display:block}
 
   .consent-row{
     display:flex;align-items:flex-start;gap:12px;margin-top:8px;
@@ -1058,14 +1060,17 @@ src="https://www.facebook.com/tr?id=1362904155651339&ev=PageView&noscript=1"
       <div class="form-group">
         <label for="name">Tu nombre</label>
         <input type="text" id="name" name="name" placeholder="¿Cómo te llamas?" autocomplete="given-name" required />
+        <span class="field-error" id="err-name">Escribe tu nombre</span>
       </div>
       <div class="form-group">
         <label for="phone">Teléfono</label>
         <input type="tel" id="phone" name="phone" placeholder="+34 600 000 000" autocomplete="tel" required />
+        <span class="field-error" id="err-phone">Formato internacional requerido, ej. +34 612 345 678</span>
       </div>
       <div class="form-group">
         <label for="email">Email</label>
         <input type="email" id="email" name="email" placeholder="tucorreo@ejemplo.com" autocomplete="email" required />
+        <span class="field-error" id="err-email">Introduce un email válido</span>
       </div>
       <div class="consent-row">
         <input type="checkbox" id="consent" required />
@@ -1217,19 +1222,49 @@ src="https://www.facebook.com/tr?id=1362904155651339&ev=PageView&noscript=1"
   const success = document.getElementById('formSuccess');
   const submitBtn = form.querySelector('.submit-btn');
 
+  const E164  = /^\+[1-9]\d{6,14}$/;
+  const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  function setError(inputId, errId, condition) {
+    const input = document.getElementById(inputId);
+    const err   = document.getElementById(errId);
+    if (condition) {
+      input.classList.add('error');
+      err.classList.add('show');
+      return true;
+    }
+    input.classList.remove('error');
+    err.classList.remove('show');
+    return false;
+  }
+
+  // Limpiar errores en tiempo real
+  document.getElementById('name').addEventListener('input', () =>
+    setError('name', 'err-name', !document.getElementById('name').value.trim()));
+  document.getElementById('phone').addEventListener('input', () => {
+    const v = document.getElementById('phone').value.trim();
+    setError('phone', 'err-phone', v && !E164.test(v));
+  });
+  document.getElementById('email').addEventListener('input', () => {
+    const v = document.getElementById('email').value.trim();
+    setError('email', 'err-email', v && !EMAIL.test(v));
+  });
+
   form.addEventListener('submit', async e => {
     e.preventDefault();
 
-    // Validación
+    const nameVal  = document.getElementById('name').value.trim();
+    const phoneVal = document.getElementById('phone').value.trim();
+    const emailVal = document.getElementById('email').value.trim();
+    const consent  = document.getElementById('consent');
+
     let valid = true;
-    form.querySelectorAll('input[required]').forEach(input => {
-      if (!input.value.trim() || (input.type === 'checkbox' && !input.checked)) {
-        input.classList.add('error');
-        valid = false;
-      } else {
-        input.classList.remove('error');
-      }
-    });
+    if (setError('name',  'err-name',  !nameVal))               valid = false;
+    if (setError('phone', 'err-phone', !phoneVal || !E164.test(phoneVal)))  valid = false;
+    if (setError('email', 'err-email', !emailVal || !EMAIL.test(emailVal))) valid = false;
+    if (!consent.checked) { consent.classList.add('error'); valid = false; }
+    else consent.classList.remove('error');
+
     if (!valid) return;
 
     // Estado loading
@@ -1260,8 +1295,8 @@ src="https://www.facebook.com/tr?id=1362904155651339&ev=PageView&noscript=1"
     if (typeof fbq !== 'undefined') fbq('track', 'Lead');
   });
 
-  form.querySelectorAll('input').forEach(input => {
-    input.addEventListener('input', () => input.classList.remove('error'));
+  document.getElementById('consent').addEventListener('change', function() {
+    if (this.checked) this.classList.remove('error');
   });
 </script>
 
