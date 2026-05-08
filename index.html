@@ -1238,18 +1238,6 @@ src="https://www.facebook.com/tr?id=1362904155651339&ev=PageView&noscript=1"
     return false;
   }
 
-  // Limpiar errores en tiempo real
-  document.getElementById('name').addEventListener('input', () =>
-    setError('name', 'err-name', !document.getElementById('name').value.trim()));
-  document.getElementById('phone').addEventListener('input', () => {
-    const v = document.getElementById('phone').value.trim();
-    setError('phone', 'err-phone', v && !E164.test(v));
-  });
-  document.getElementById('email').addEventListener('input', () => {
-    const v = document.getElementById('email').value.trim();
-    setError('email', 'err-email', v && !EMAIL.test(v));
-  });
-
   form.addEventListener('submit', async e => {
     e.preventDefault();
 
