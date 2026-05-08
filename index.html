@@ -1211,11 +1211,16 @@ src="https://www.facebook.com/tr?id=1362904155651339&ev=PageView&noscript=1"
     });
   });
 
-  // Form submission
+  // Form submission → Make webhook
+  const WEBHOOK_URL = 'https://hook.eu2.make.com/b7a4hexyj9o66y2ktve5kodqvw2svqhv';
   const form = document.getElementById('leadForm');
   const success = document.getElementById('formSuccess');
-  form.addEventListener('submit', e => {
+  const submitBtn = form.querySelector('.submit-btn');
+
+  form.addEventListener('submit', async e => {
     e.preventDefault();
+
+    // Validación
     let valid = true;
     form.querySelectorAll('input[required]').forEach(input => {
       if (!input.value.trim() || (input.type === 'checkbox' && !input.checked)) {
@@ -1226,9 +1231,35 @@ src="https://www.facebook.com/tr?id=1362904155651339&ev=PageView&noscript=1"
       }
     });
     if (!valid) return;
+
+    // Estado loading
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enviando...';
+
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre:    document.getElementById('name').value.trim(),
+          telefono:  document.getElementById('phone').value.trim(),
+          email:     document.getElementById('email').value.trim(),
+          origen:    'Landing Vibe Coders',
+          fecha:     new Date().toLocaleString('es-ES', { timeZone: 'Europe/Madrid' })
+        })
+      });
+    } catch (err) {
+      console.warn('Webhook error:', err);
+    }
+
+    // Mostrar éxito siempre (aunque falle la red, el lead ya está)
     form.style.display = 'none';
     success.style.display = 'block';
+
+    // Pixel: lead event
+    if (typeof fbq !== 'undefined') fbq('track', 'Lead');
   });
+
   form.querySelectorAll('input').forEach(input => {
     input.addEventListener('input', () => input.classList.remove('error'));
   });
